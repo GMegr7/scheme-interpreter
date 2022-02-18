@@ -69,80 +69,42 @@ public class Interpreter {
         String func = listTokenizer.next().trim();
         if(DEBUG_MODE) {System.out.println("Function: " + func + " Evaluating: " + list);}
         switch (func) {
-
-            //Arithmetic operations
             case "+" -> {
-                return procedureAdd(listTokenizer, currentNamespace);
+                return evaluateProcedureAdd(listTokenizer, currentNamespace);
             }
             case "-" -> {
-                return procedureSubtract(listTokenizer, currentNamespace);
+                return evaluateProcedureSubtract(listTokenizer, currentNamespace);
             }
             case "*" -> {
-                return procedureMultiply(listTokenizer, currentNamespace);
+                return evaluateProcedureMultiply(listTokenizer, currentNamespace);
             }
             case "/" -> {
-                return procedureDivide(listTokenizer, currentNamespace);
+                return evaluateProcedureDivide(listTokenizer, currentNamespace);
             }
-
-            //Comparing operations
             case "=" -> {
-                return procedureEquals(listTokenizer, currentNamespace);
+                return evaluateProcedureEquals(listTokenizer, currentNamespace);
             }
             case ">" -> {
-                return procedureMoreThan(listTokenizer, currentNamespace);
+                return evaluateProcedureMoreThan(listTokenizer, currentNamespace);
             }
             case "<" -> {
-                return procedureLessThan(listTokenizer, currentNamespace);
+                return evaluateProcedureLessThan(listTokenizer, currentNamespace);
             }
-
-            //List operations
             case "car" -> {
-                String currList = evaluate(listTokenizer.next(), currentNamespace);
-                MyTokenizer tempTok = new MyTokenizer(currList.substring(2));
-                return tempTok.next();
+                return evaluateProcedure_car(listTokenizer, currentNamespace);
             }
             case "cdr" -> {
-                String currList = evaluate(listTokenizer.next(), currentNamespace);
-                MyTokenizer tempTok = new MyTokenizer(currList.substring(2));
-                String firstElem = tempTok.next();
-                return "'(" + currList.substring(currList.indexOf(firstElem) + firstElem.length()).trim();
+                return evaluateProcedure_cdr(listTokenizer, currentNamespace);
             }
             case "cons" -> {
-                String arg1 = evaluate(listTokenizer.next(), currentNamespace);
-                String arg2 = evaluate(listTokenizer.next(), currentNamespace);
-                if(!isList(arg2)) {
-                    System.err.println("Argument 2 to \"cons\" is not a list.");
-                    return "";
-                }
-                return "'(" + arg1 + " " + arg2.substring(2);
+                return evaluateProcedure_cons(listTokenizer, currentNamespace);
             }
             case "append" -> {
-                String list1 = listTokenizer.next().trim();
-                String list2 = listTokenizer.next().trim();
-                return  list1.substring(0, list1.length() - 1).trim() + " " +
-                        list2.substring(2).trim();
+                return evaluateProcedure_append(listTokenizer, currentNamespace);
             }
-
-            //Flow Control
             case "if" -> {
-                String condition = evaluate(listTokenizer.next(), currentNamespace);
-                if(condition.equals(TRUE_BOOLEAN)) {
-                    return evaluate(listTokenizer.next());
-                } else if(condition.equals(FALSE_BOOLEAN)) {
-                    StringBuilder code = new StringBuilder();
-                    listTokenizer.next();
-                    String curr = listTokenizer.next();
-                    while(curr != null) {
-                        code.append(curr);
-                        curr = listTokenizer.next();
-                    }
-                    return evaluate(code.toString(), currentNamespace);
-                } else {
-                    System.err.println("Wrong type of expression in 'if' condition.");
-                }
+                return evaluateMacro_if(listTokenizer, currentNamespace);
             }
-
-            //Other
             case "define" -> {
                 String identifier = listTokenizer.next().trim();
                 if(identifier.charAt(0) == '(') {
@@ -187,8 +149,10 @@ public class Interpreter {
         return "";
     }
 
-    //Procedures
-    private String procedureAdd(MyTokenizer currentList, Namespace currentNamespace) {
+    // Procedures/Macros
+
+    // Arithmetic operations
+    private String evaluateProcedureAdd(MyTokenizer currentList, Namespace currentNamespace) {
         int ans = 0;
         String next = currentList.next();
         while(next != null) {
@@ -197,7 +161,7 @@ public class Interpreter {
         }
         return Integer.toString(ans);
     }
-    private String procedureSubtract(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureSubtract(MyTokenizer currentList, Namespace currentNamespace) {
         String next = currentList.next();
         int ans = Integer.parseInt(evaluate(next, currentNamespace));
         next = currentList.next();
@@ -207,7 +171,7 @@ public class Interpreter {
         }
         return Integer.toString(ans);
     }
-    private String procedureMultiply(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureMultiply(MyTokenizer currentList, Namespace currentNamespace) {
         int ans = 1;
         String next = currentList.next();
         while(next != null) {
@@ -216,7 +180,7 @@ public class Interpreter {
         }
         return Integer.toString(ans);
     }
-    private String procedureDivide(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureDivide(MyTokenizer currentList, Namespace currentNamespace) {
         String next = currentList.next();
         int ans = Integer.parseInt(evaluate(next, currentNamespace));
         next = currentList.next();
@@ -226,7 +190,9 @@ public class Interpreter {
         }
         return Integer.toString(ans);
     }
-    private String procedureEquals(MyTokenizer currentList, Namespace currentNamespace) {
+
+    // Compare operations
+    private String evaluateProcedureEquals(MyTokenizer currentList, Namespace currentNamespace) {
         String toEqual = evaluate(currentList.next(), currentNamespace);
         String value2 = currentList.next();
         while(value2 != null) {
@@ -237,7 +203,7 @@ public class Interpreter {
         }
         return TRUE_BOOLEAN;
     }
-    private String procedureMoreThan(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureMoreThan(MyTokenizer currentList, Namespace currentNamespace) {
         String value1 = evaluate(currentList.next(), currentNamespace);
         String value2 = evaluate(currentList.next(), currentNamespace);
         if(isNumber(value1) && isNumber(value2)) {
@@ -247,7 +213,7 @@ public class Interpreter {
             return "";
         }
     }
-    private String procedureLessThan(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureLessThan(MyTokenizer currentList, Namespace currentNamespace) {
         String value1 = evaluate(currentList.next(), currentNamespace);
         String value2 = evaluate(currentList.next(), currentNamespace);
         if(isNumber(value1) && isNumber(value2)) {
@@ -258,7 +224,55 @@ public class Interpreter {
         }
     }
 
-    //Predicates
+    // List operations
+    private String evaluateProcedure_car(MyTokenizer currentList, Namespace currentNamespace) {
+        String currList = evaluate(currentList.next(), currentNamespace);
+        MyTokenizer tempTok = new MyTokenizer(currList.substring(2));
+        return tempTok.next();
+    }
+    private String evaluateProcedure_cdr(MyTokenizer currentList, Namespace currentNamespace) {
+        String currList = evaluate(currentList.next(), currentNamespace);
+        MyTokenizer tempTok = new MyTokenizer(currList.substring(2));
+        String firstElem = tempTok.next();
+        return "'(" + currList.substring(currList.indexOf(firstElem) + firstElem.length()).trim();
+    }
+    private String evaluateProcedure_cons(MyTokenizer currentList, Namespace currentNamespace) {
+        String arg1 = evaluate(currentList.next(), currentNamespace);
+        String arg2 = evaluate(currentList.next(), currentNamespace);
+        if(!isList(arg2)) {
+            System.err.println("Argument 2 to \"cons\" is not a list.");
+            return "";
+        }
+        return "'(" + arg1 + " " + arg2.substring(2);
+    }
+    private String evaluateProcedure_append(MyTokenizer currentList, Namespace currentNamespace) {
+        String list1 = currentList.next().trim();
+        String list2 = currentList.next().trim();
+        return  list1.substring(0, list1.length() - 1).trim() + " " +
+                list2.substring(2).trim();
+    }
+
+    // Flow control
+    private String evaluateMacro_if(MyTokenizer currentList, Namespace currentNamespace) {
+        String condition = evaluate(currentList.next(), currentNamespace);
+        if(condition.equals(TRUE_BOOLEAN)) {
+            return evaluate(currentList.next());
+        } else if(condition.equals(FALSE_BOOLEAN)) {
+            StringBuilder code = new StringBuilder();
+            currentList.next();
+            String curr = currentList.next();
+            while(curr != null) {
+                code.append(curr);
+                curr = currentList.next();
+            }
+            return evaluate(code.toString(), currentNamespace);
+        } else {
+            System.err.println("Wrong type of expression in 'if' condition.");
+            return "";
+        }
+    }
+
+    // Predicates
     private boolean isList(String s) {
         s = s.trim();
         return s.charAt(0) == '\'' && s.charAt(1) == '(' && s.charAt(s.length() - 1) == ')';
