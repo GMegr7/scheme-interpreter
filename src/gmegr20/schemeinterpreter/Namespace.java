@@ -24,7 +24,11 @@ class Namespace {
         }
     }
 
-    public NamespaceItem get(String name) {
-        return identifiers.get(name);
+    public boolean contains(String identifier) {
+        return identifiers.containsKey(identifier);
+    }
+
+    public NamespaceItem get(String identifier) {
+        return identifiers.get(identifier);
     }
 }

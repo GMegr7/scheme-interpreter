@@ -1,8 +1,6 @@
 package gmegr20.schemeinterpreter;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 class NamespaceItem {
     private final String value;
@@ -13,6 +11,7 @@ class NamespaceItem {
         this.value = value;
         this.parameters = null;
     }
+
     public NamespaceItem(ArrayList<String> parameters, String value) {
         this.value = value;
         this.parameters = parameters;
@@ -27,6 +26,7 @@ class NamespaceItem {
     }
 
     public String getParameter(int i) {
+        assert parameters != null;
         return parameters.get(i);
     }
 

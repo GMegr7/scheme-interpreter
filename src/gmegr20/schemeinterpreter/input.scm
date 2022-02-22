@@ -11,3 +11,11 @@
         (+ (fibonacci (- n 1)) (fibonacci (- n 2))))))
 
 (isPrime 7)
+
+((lambda (x y) (+ x y)) 1 2)
+
+(define (square x) (* x x))
+
+(map square '(1 2 3))
+
+(map (lambda (x) (* x x)) '(1 2 3))

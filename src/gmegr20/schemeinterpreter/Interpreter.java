@@ -2,6 +2,7 @@ package gmegr20.schemeinterpreter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -64,7 +65,7 @@ public class Interpreter {
     private String evaluateList(String list, Namespace outerNamespace) {
         Namespace currentNamespace = new Namespace(outerNamespace);
         list = list.trim();
-        list = list.substring(1, list.length() - 1);
+        list = list.trim().substring(1, list.length() - 1);
         MyTokenizer listTokenizer = new MyTokenizer(list);
         String func = listTokenizer.next().trim();
         if(DEBUG_MODE) {System.out.println("Function: " + func + " Evaluating: " + list);}
@@ -99,20 +100,23 @@ public class Interpreter {
             case "cons" -> {
                 return evaluateProcedure_cons(listTokenizer, currentNamespace);
             }
+            case "map" -> {
+                return evaluateProcedureMap(listTokenizer, currentNamespace);
+            }
             case "append" -> {
                 return evaluateProcedure_append(listTokenizer, currentNamespace);
             }
             case "if" -> {
-                return evaluateMacro_if(listTokenizer, currentNamespace);
+                return evaluateMacroIf(listTokenizer, currentNamespace);
             }
             case "define" -> {
                 String identifier = listTokenizer.next().trim();
                 if(identifier.charAt(0) == '(') {
-                    StringTokenizer st = new StringTokenizer(identifier.substring(1, identifier.length() - 1));
-                    String name = st.nextToken();
+                    StringTokenizer parameterTokenizer = new StringTokenizer(identifier.substring(1, identifier.length() - 1));
+                    String name = parameterTokenizer.nextToken();
                     ArrayList<String> parameters = new ArrayList<>();
-                    while(st.hasMoreTokens()) {
-                        parameters.add(st.nextToken());
+                    while(parameterTokenizer.hasMoreTokens()) {
+                        parameters.add(parameterTokenizer.nextToken());
                     }
                     StringBuilder code = new StringBuilder();
                     String curr = listTokenizer.next();
@@ -129,23 +133,14 @@ public class Interpreter {
                 }
             }
             default -> {
-                NamespaceItem funcItem = currentNamespace.get(func);
-                if(funcItem == null) {
+                if(!currentNamespace.contains(func) && func.charAt(0) != '(') {
                     System.err.println("Error while evaluating: " + func + " could not be identified.");
                     return "";
-                }
-                if(funcItem.isFunction()) {
-                    Namespace newNamespace = new Namespace(currentNamespace);
-                    for(int i = 0; i < funcItem.getParameterCount(); ++i) {
-                        newNamespace.addLiteral(funcItem.getParameter(i), evaluate(listTokenizer.next(), currentNamespace));
-                    }
-                    return evaluate(funcItem.getValue(), newNamespace);
                 } else {
-                    return funcItem.getValue();
+                    return evaluateFunctionList(func, listTokenizer, currentNamespace);
                 }
             }
         }
-
         return "";
     }
 
@@ -190,6 +185,9 @@ public class Interpreter {
         }
         return Integer.toString(ans);
     }
+
+    // Boolean operations
+
 
     // Compare operations
     private String evaluateProcedureEquals(MyTokenizer currentList, Namespace currentNamespace) {
@@ -245,6 +243,21 @@ public class Interpreter {
         }
         return "'(" + arg1 + " " + arg2.substring(2);
     }
+    private String evaluateProcedureMap(MyTokenizer currentList, Namespace currentNamespace) {
+        StringBuilder result = new StringBuilder();
+        String function = currentList.next();
+        String arguments = currentList.next().trim();
+        arguments = arguments.substring(2, arguments.length() - 1);
+        MyTokenizer argumentTokenizer = new MyTokenizer(arguments);
+        String curr = argumentTokenizer.next();
+        while(curr != null) {
+            ArrayList<String> argumentList = new ArrayList<>();
+            argumentList.add(curr);
+            result.append(evaluateFunctionCode(getLambda(function, currentNamespace), argumentList, currentNamespace)).append(' ');
+            curr = argumentTokenizer.next();
+        }
+        return "'(" + result.toString().trim() + ')';
+    }
     private String evaluateProcedure_append(MyTokenizer currentList, Namespace currentNamespace) {
         String list1 = currentList.next().trim();
         String list2 = currentList.next().trim();
@@ -253,7 +266,7 @@ public class Interpreter {
     }
 
     // Flow control
-    private String evaluateMacro_if(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateMacroIf(MyTokenizer currentList, Namespace currentNamespace) {
         String condition = evaluate(currentList.next(), currentNamespace);
         if(condition.equals(TRUE_BOOLEAN)) {
             return evaluate(currentList.next());
@@ -270,6 +283,23 @@ public class Interpreter {
             System.err.println("Wrong type of expression in 'if' condition.");
             return "";
         }
+    }
+
+    private String evaluateFunctionList(String function, MyTokenizer currentList, Namespace currentNamespace) {
+        NamespaceItem currentLambda = getLambda(function, currentNamespace);
+        ArrayList<String> argumentList = new ArrayList<>();
+        for (int i = 0; i < currentLambda.getParameterCount(); i++) {
+            argumentList.add(currentList.next());
+        }
+        return evaluateFunctionCode(currentLambda, argumentList, currentNamespace);
+    }
+
+    private String evaluateFunctionCode(NamespaceItem currentLambda, ArrayList<String> argumentList, Namespace outerNamespace) {
+        Namespace newNamespace = new Namespace(outerNamespace);
+        for (int i = 0; i < currentLambda.getParameterCount(); i++) {
+            newNamespace.addLiteral(currentLambda.getParameter(i), evaluate(argumentList.get(i), outerNamespace));
+        }
+        return evaluate(currentLambda.getValue(), newNamespace);
     }
 
     // Predicates
@@ -295,43 +325,29 @@ public class Interpreter {
         return true;
     }
 
-//    public void evaluateFile(File f) throws FileNotFoundException {
-//        Scanner fileScanner = new Scanner(f);
-//        System.out.println("File read successfully!\n");
-//        StringBuilder soFar = new StringBuilder();
-//        int balance = 0;
-//        while(fileScanner.hasNext()) {
-//            String token = fileScanner.next();
-//            for (int i = 0; i < token.length(); i++) {
-//                char curr = token.charAt(i);
-//                switch (curr) {
-//                    case '(' -> {
-//                        if (balance == 0 && !soFar.toString().isBlank()) {
-//                            evaluate(soFar.toString());
-//                            soFar = new StringBuilder();
-//                        }
-//                        soFar.append(" ( ");
-//                        balance++;
-//                    }
-//                    case ')' -> {
-//                        soFar.append(" ) ");
-//                        balance--;
-//                        if (balance == 0 && !soFar.toString().isBlank()) {
-//                            evaluate(soFar.toString());
-//                            soFar = new StringBuilder();
-//                        }
-//                    }
-//                    default -> {
-//                        soFar.append(curr);
-//                    }
-//                }
-//            }
-//            if(balance == 0 && !soFar.toString().isBlank()) {
-//                evaluate(soFar.toString());
-//                soFar = new StringBuilder();
-//            } else {
-//                soFar.append(' ');
-//            }
-//        }
-//    }
+    private NamespaceItem getLambda(String function, Namespace currentNamespace) {
+        if(currentNamespace.contains(function)) {
+            return currentNamespace.get(function);
+        } else {
+            StringBuilder code;
+            ArrayList<String> parameterList = new ArrayList<>();
+            MyTokenizer lambdaTokenizer = new MyTokenizer(function.substring(1, function.length() - 1));
+            if(!lambdaTokenizer.next().equals("lambda")) {
+                System.err.println("Wrong command to evaluate.");
+                return null;
+            }
+            String parameters = lambdaTokenizer.next();
+            StringTokenizer parameterTokenizer = new StringTokenizer(parameters.trim().substring(1, parameters.length() - 1));
+            while(parameterTokenizer.hasMoreTokens()) {
+                parameterList.add(parameterTokenizer.nextToken());
+            }
+            String curr = lambdaTokenizer.next();
+            code = new StringBuilder();
+            while(curr != null) {
+                code.append(curr);
+                curr = lambdaTokenizer.next();
+            }
+            return new NamespaceItem(parameterList, code.toString());
+        }
+    }
 }
