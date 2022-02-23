@@ -20,7 +20,11 @@ public class Interpreter {
         while(curr != null) {
             String currValue = evaluate(curr);
             if(currValue.length() > 0) {
-                System.out.print(currValue + " ");
+                if(currValue.charAt(0) == '\'') {
+                    System.out.print(currValue.substring(1) + " ");
+                } else {
+                    System.out.print(currValue + " ");
+                }
             }
             curr = mt.next();
         }
@@ -106,6 +110,12 @@ public class Interpreter {
             case "append" -> {
                 return evaluateProcedure_append(listTokenizer, currentNamespace);
             }
+            case "and" -> {
+                return evaluateProcedureAnd(listTokenizer, currentNamespace);
+            }
+            case "or" -> {
+                return evaluateProcedureOr(listTokenizer, currentNamespace);
+            }
             case "if" -> {
                 return evaluateMacroIf(listTokenizer, currentNamespace);
             }
@@ -187,6 +197,26 @@ public class Interpreter {
     }
 
     // Boolean operations
+    private String evaluateProcedureAnd(MyTokenizer currentList, Namespace currentNamespace) {
+        String curr = currentList.next();
+        while(curr != null) {
+            if(!evaluate(curr, currentNamespace).equals(TRUE_BOOLEAN)) {
+                return FALSE_BOOLEAN;
+            }
+            curr = currentList.next();
+        }
+        return TRUE_BOOLEAN;
+    }
+    private String evaluateProcedureOr(MyTokenizer currentList, Namespace currentNamespace) {
+        String curr = currentList.next();
+        while (curr != null) {
+            if(evaluate(curr, currentNamespace).equals(TRUE_BOOLEAN)) {
+                return TRUE_BOOLEAN;
+            }
+            curr = currentList.next();
+        }
+        return FALSE_BOOLEAN;
+    }
 
 
     // Compare operations
