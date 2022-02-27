@@ -300,10 +300,20 @@ public class Interpreter {
         return "'(" + result.toString().trim() + ')';
     }
     private String evaluateProcedureAppend(MyTokenizer currentList, Namespace currentNamespace) {
-        String list1 = currentList.next().trim();
-        String list2 = currentList.next().trim();
-        return  list1.substring(0, list1.length() - 1).trim() + " " +
-                list2.substring(2).trim();
+        StringBuilder finalList = new StringBuilder();
+        String nextList = currentList.next();
+        while(nextList != null) {
+            if(!isList(nextList)) {
+                System.err.println("One of the arguments is not a list.");
+                return "";
+            }
+            String listContent = nextList.substring(2, nextList.length() - 1).trim();
+            if(listContent.length() > 0) {
+                finalList.append(listContent).append(' ');
+            }
+            nextList = currentList.next();
+        }
+        return "'(" + finalList.toString().trim() + ')';
     }
 
     private String evaluateProcedureApply(MyTokenizer currentList, Namespace currentNamespace) {
@@ -332,7 +342,6 @@ public class Interpreter {
         }
         return argumentList.substring(2, argumentList.length() - 1).isBlank() ? TRUE_BOOLEAN : FALSE_BOOLEAN;
     }
-
     private String evaluateProcedureLength(MyTokenizer currentList, Namespace currentNamespace) {
         int length = 0;
         String argumentList = currentList.next().trim();
@@ -377,7 +386,6 @@ public class Interpreter {
         }
         return evaluateFunctionCode(currentLambda, argumentList, currentNamespace);
     }
-
     private String evaluateFunctionCode(NamespaceItem currentLambda, ArrayList<String> argumentList, Namespace outerNamespace) {
         Namespace newNamespace = new Namespace(outerNamespace);
         for (int i = 0; i < currentLambda.getParameterCount(); i++) {
