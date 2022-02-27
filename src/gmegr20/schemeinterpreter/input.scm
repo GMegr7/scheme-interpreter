@@ -19,3 +19,9 @@
 (map square '(1 2 3))
 
 (map (lambda (x) (* x x)) '(1 2 3))
+
+(apply + '(1 2 3))
+(eval '(and #t #t))
+
+(null? '())
+(length '(1 2 ()))

@@ -2,7 +2,6 @@ package gmegr20.schemeinterpreter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -74,51 +73,6 @@ public class Interpreter {
         String func = listTokenizer.next().trim();
         if(DEBUG_MODE) {System.out.println("Function: " + func + " Evaluating: " + list);}
         switch (func) {
-            case "+" -> {
-                return evaluateProcedureAdd(listTokenizer, currentNamespace);
-            }
-            case "-" -> {
-                return evaluateProcedureSubtract(listTokenizer, currentNamespace);
-            }
-            case "*" -> {
-                return evaluateProcedureMultiply(listTokenizer, currentNamespace);
-            }
-            case "/" -> {
-                return evaluateProcedureDivide(listTokenizer, currentNamespace);
-            }
-            case "=" -> {
-                return evaluateProcedureEquals(listTokenizer, currentNamespace);
-            }
-            case ">" -> {
-                return evaluateProcedureMoreThan(listTokenizer, currentNamespace);
-            }
-            case "<" -> {
-                return evaluateProcedureLessThan(listTokenizer, currentNamespace);
-            }
-            case "car" -> {
-                return evaluateProcedure_car(listTokenizer, currentNamespace);
-            }
-            case "cdr" -> {
-                return evaluateProcedure_cdr(listTokenizer, currentNamespace);
-            }
-            case "cons" -> {
-                return evaluateProcedure_cons(listTokenizer, currentNamespace);
-            }
-            case "map" -> {
-                return evaluateProcedureMap(listTokenizer, currentNamespace);
-            }
-            case "append" -> {
-                return evaluateProcedure_append(listTokenizer, currentNamespace);
-            }
-            case "and" -> {
-                return evaluateProcedureAnd(listTokenizer, currentNamespace);
-            }
-            case "or" -> {
-                return evaluateProcedureOr(listTokenizer, currentNamespace);
-            }
-            case "if" -> {
-                return evaluateMacroIf(listTokenizer, currentNamespace);
-            }
             case "define" -> {
                 String identifier = listTokenizer.next().trim();
                 if(identifier.charAt(0) == '(') {
@@ -141,6 +95,63 @@ public class Interpreter {
                     outerNamespace.addLiteral(identifier, literalValue);
                     currentNamespace.addLiteral(identifier, literalValue);
                 }
+            }
+            case "+" -> {
+                return evaluateProcedureAdd(listTokenizer, currentNamespace);
+            }
+            case "-" -> {
+                return evaluateProcedureSubtract(listTokenizer, currentNamespace);
+            }
+            case "*" -> {
+                return evaluateProcedureMultiply(listTokenizer, currentNamespace);
+            }
+            case "/" -> {
+                return evaluateProcedureDivide(listTokenizer, currentNamespace);
+            }
+            case "=" -> {
+                return evaluateProcedureEquals(listTokenizer, currentNamespace);
+            }
+            case ">" -> {
+                return evaluateProcedureMoreThan(listTokenizer, currentNamespace);
+            }
+            case "<" -> {
+                return evaluateProcedureLessThan(listTokenizer, currentNamespace);
+            }
+            case "and" -> {
+                return evaluateProcedureAnd(listTokenizer, currentNamespace);
+            }
+            case "or" -> {
+                return evaluateProcedureOr(listTokenizer, currentNamespace);
+            }
+            case "if" -> {
+                return evaluateMacroIf(listTokenizer, currentNamespace);
+            }
+            case "car" -> {
+                return evaluateProcedureCar(listTokenizer, currentNamespace);
+            }
+            case "cdr" -> {
+                return evaluateProcedureCdr(listTokenizer, currentNamespace);
+            }
+            case "cons" -> {
+                return evaluateProcedureCons(listTokenizer, currentNamespace);
+            }
+            case "map" -> {
+                return evaluateProcedureMap(listTokenizer, currentNamespace);
+            }
+            case "append" -> {
+                return evaluateProcedureAppend(listTokenizer, currentNamespace);
+            }
+            case "apply" -> {
+                return evaluateProcedureApply(listTokenizer, currentNamespace);
+            }
+            case "eval" -> {
+                return evaluateProcedureEval(listTokenizer, currentNamespace);
+            }
+            case "null?" -> {
+                return evaluateProcedureNullQuery(listTokenizer, currentNamespace);
+            }
+            case "length" -> {
+                return evaluateProcedureLength(listTokenizer, currentNamespace);
             }
             default -> {
                 if(!currentNamespace.contains(func) && func.charAt(0) != '(') {
@@ -253,18 +264,18 @@ public class Interpreter {
     }
 
     // List operations
-    private String evaluateProcedure_car(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureCar(MyTokenizer currentList, Namespace currentNamespace) {
         String currList = evaluate(currentList.next(), currentNamespace);
         MyTokenizer tempTok = new MyTokenizer(currList.substring(2));
         return tempTok.next();
     }
-    private String evaluateProcedure_cdr(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureCdr(MyTokenizer currentList, Namespace currentNamespace) {
         String currList = evaluate(currentList.next(), currentNamespace);
         MyTokenizer tempTok = new MyTokenizer(currList.substring(2));
         String firstElem = tempTok.next();
         return "'(" + currList.substring(currList.indexOf(firstElem) + firstElem.length()).trim();
     }
-    private String evaluateProcedure_cons(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureCons(MyTokenizer currentList, Namespace currentNamespace) {
         String arg1 = evaluate(currentList.next(), currentNamespace);
         String arg2 = evaluate(currentList.next(), currentNamespace);
         if(!isList(arg2)) {
@@ -288,11 +299,54 @@ public class Interpreter {
         }
         return "'(" + result.toString().trim() + ')';
     }
-    private String evaluateProcedure_append(MyTokenizer currentList, Namespace currentNamespace) {
+    private String evaluateProcedureAppend(MyTokenizer currentList, Namespace currentNamespace) {
         String list1 = currentList.next().trim();
         String list2 = currentList.next().trim();
         return  list1.substring(0, list1.length() - 1).trim() + " " +
                 list2.substring(2).trim();
+    }
+
+    private String evaluateProcedureApply(MyTokenizer currentList, Namespace currentNamespace) {
+        String currentLambda = currentList.next();
+        String argumentList = currentList.next().trim();
+        if(!isList(argumentList)) {
+            System.err.println("The second argument is not a list.");
+            return "";
+        }
+        return evaluateList("(" + currentLambda + " " + argumentList.substring(2), currentNamespace);
+    }
+    private String evaluateProcedureEval(MyTokenizer currentList, Namespace currentNamespace) {
+        String argumentList = currentList.next();
+        if(!isList(argumentList)) {
+            System.err.println("The argument is not a list.");
+            return "";
+        }
+        return evaluateList(argumentList.substring(1), currentNamespace);
+    }
+
+    private String evaluateProcedureNullQuery(MyTokenizer currentList, Namespace currentNamespace) {
+        String argumentList = currentList.next().trim();
+        if(!isList(argumentList)) {
+            System.err.println("The argument is not a list.");
+            return "";
+        }
+        return argumentList.substring(2, argumentList.length() - 1).isBlank() ? TRUE_BOOLEAN : FALSE_BOOLEAN;
+    }
+
+    private String evaluateProcedureLength(MyTokenizer currentList, Namespace currentNamespace) {
+        int length = 0;
+        String argumentList = currentList.next().trim();
+        if(!isList(argumentList)) {
+            System.err.println("The argument is not a list.");
+            return "";
+        }
+        MyTokenizer listTokenizer = new MyTokenizer(argumentList.substring(2, argumentList.length() - 1));
+        String curr = listTokenizer.next();
+        while(curr != null) {
+            ++length;
+            curr = listTokenizer.next();
+        }
+        return String.valueOf(length);
     }
 
     // Flow control
